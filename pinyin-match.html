@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼音汉字消消乐 🐣</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        h1 {
+            color: white;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .game-container {
+            background: rgba(255,255,255,0.15);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .stats span {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 10px;
+        }
+        .mode-select {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+        }
+        .mode-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+        .mode-btn.active {
+            background: #ff6b6b;
+            transform: scale(1.05);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .card {
+            width: 55px;
+            height: 65px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+        .card:hover {
+            transform: scale(1.08);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        .card.selected {
+            background: #ffd93d;
+            transform: scale(1.1);
+        }
+        .card.matched {
+            animation: match 0.5s ease-out forwards;
+        }
+        @keyframes match {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        .card .char {
+            font-size: 28px;
+            font-weight: bold;
+            color: #333;
+        }
+        .card .pinyin {
+            font-size: 11px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .card.hide-pinyin .pinyin {
+            display: none;
+        }
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-restart {
+            background: #4ecdc4;
+            color: white;
+        }
+        .btn-restart:hover {
+            background: #3dbdb5;
+        }
+        .message {
+            text-align: center;
+            color: white;
+            margin-top: 10px;
+            min-height: 24px;
+            font-size: 14px;
+        }
+        .success { color: #4ecdc4; font-weight: bold; }
+        .hint {
+            color: rgba(255,255,255,0.7);
+            font-size: 12px;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐣 拼音汉字消消乐</h1>
+    <p class="subtitle">匹配相同拼音或汉字，消除它们！</p>
+    
+    <div class="game-container">
+        <div class="mode-select">
+            <button class="mode-btn active" data-mode="pinyin">📖 拼音模式</button>
+            <button class="mode-btn" data-mode="char">字模式</button>
+            <button class="mode-btn" data-mode="both">🔄 混合模式</button>
+        </div>
+        
+        <div class="stats">
+            <span>得分: <b id="score">0</b></span>
+            <span>剩余: <b id="left">30</b></span>
+        </div>
+        
+        <div class="grid" id="grid"></div>
+        
+        <button class="btn btn-restart" onclick="initGame()">🔄 重新开始</button>
+        <p class="message" id="message"></p>
+    </div>
+    
+    <p class="hint">点击两张相同的卡片即可消除<br>拼音模式：匹配相同拼音 | 汉字模式：匹配相同汉字 | 混合：两者都行</p>
+
+    <script>
+        // 汉字库（含拼音）
+        const charData = [
+            {char: '马', pinyin: 'mǎ'},
+            {char: '妈', pinyin: 'mā'},
+            {char: '妈', pinyin: 'mā'},
+            {char: '花', pinyin: 'huā'},
+            {char: '画', pinyin: 'huà'},
+            {char: '火', pinyin: 'huǒ'},
+            {char: '大', pinyin: 'dà'},
+            {char: '他', pinyin: 'tā'},
+            {char: '她', pinyin: 'tā'},
+            {char: '它', pinyin: 'tā'},
+            {char: '天', pinyin: 'tiān'},
+            {char: '田', pinyin: 'tián'},
+            {char: '日', pinyin: 'rì'},
+            {char: '月', pinyin: 'yuè'},
+            {char: '口', pinyin: 'kǒu'},
+            {char: '目', pinyin: 'mù'},
+            {char: '耳', pinyin: 'ěr'},
+            {char: '手', pinyin: 'shǒu'},
+            {char: '足', pinyin: 'zú'},
+            {char: '字', pinyin: 'zì'},
+            {char: '学', pinyin: 'xué'},
+            {char: '习', pinyin: 'xí'},
+            {char: '文', pinyin: 'wén'},
+            {char: '语', pinyin: 'yǔ'},
+            {char: '数', pinyin: 'shù'},
+            {char: '学', pinyin: 'xué'},
+            {char: '生', pinyin: 'shēng'},
+            {char: '师', pinyin: 'shī'},
+            {char: '校', pinyin: 'xiào'},
+            {char: '好', pinyin: 'hǎo'},
+        ];
+
+        let grid = [];
+        let selected = [];
+        let score = 0;
+        let mode = 'pinyin';
+        let isProcessing = false;
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function initGame() {
+            // 复制并打乱数据，确保有匹配对
+            let pool = [];
+            const pairCount = 15; // 15对 = 30张
+            
+            // 随机选15个不同的字/拼音组合
+            const shuffled = shuffle([...charData]);
+            for (let i = 0; i < pairCount; i++) {
+                const item = {...shuffled[i % shuffled.length], id: i * 2};
+                pool.push(item);
+                pool.push({...item, id: i * 2 + 1});
+            }
+            
+            grid = shuffle(pool);
+            selected = [];
+            score = 0;
+            isProcessing = false;
+            
+            renderGrid();
+            updateStats();
+            document.getElementById('message').textContent = '';
+        }
+
+        function renderGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            
+            grid.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.className = 'card' + (mode === 'char' ? ' hide-pinyin' : '');
+                card.innerHTML = `
+                    <span class="char">${item.char}</span>
+                    <span class="pinyin">${item.pinyin}</span>
+                `;
+                card.dataset.idx = idx;
+                card.onclick = () => selectCard(idx);
+                gridEl.appendChild(card);
+            });
+        }
+
+        function selectCard(idx) {
+            if (isProcessing) return;
+            if (selected.includes(idx)) return;
+            
+            const cards = document.querySelectorAll('.card');
+            cards[idx].classList.add('selected');
+            selected.push(idx);
+
+            if (selected.length === 2) {
+                isProcessing = true;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [i1, i2] = selected;
+            const item1 = grid[i1];
+            const item2 = grid[i2];
+            
+            let match = false;
+            
+            if (mode === 'pinyin') {
+                match = item1.pinyin === item2.pinyin;
+            } else if (mode === 'char') {
+                match = item1.char === item2.char;
+            } else {
+                match = item1.pinyin === item2.pinyin || item1.char === item2.char;
+            }
+
+            if (match) {
+                // 匹配成功
+                const cards = document.querySelectorAll('.card');
+                cards[i1].classList.add('matched');
+                cards[i2].classList.add('matched');
+                
+                setTimeout(() => {
+                    grid[i1] = null;
+                    grid[i2] = null;
+                    cards[i1].style.visibility = 'hidden';
+                    cards[i2].style.visibility = 'hidden';
+                    
+                    score += 10;
+                    selected = [];
+                    isProcessing = false;
+                    updateStats();
+                    checkWin();
+                }, 500);
+                
+                showMessage('🎉 匹配成功！+10分', 'success');
+            } else {
+                // 不匹配
+                setTimeout(() => {
+                    const cards = document.querySelectorAll('.card');
+                    cards[i1].classList.remove('selected');
+                    cards[i2].classList.remove('selected');
+                    selected = [];
+                    isProcessing = false;
+                }, 600);
+                
+                showMessage('😅 不匹配，再试试！');
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            const left = grid.filter(g => g !== null).length;
+            document.getElementById('left').textContent = left;
+        }
+
+        function checkWin() {
+            const left = grid.filter(g => g !== null).length;
+            if (left === 0) {
+                showMessage('🏆 恭喜你赢了！太棒了！', 'success');
+            }
+        }
+
+        function showMessage(text, className = '') {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + className;
+        }
+
+        // 模式切换
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                mode = btn.dataset.mode;
+                
+                // 更新卡片显示
+                document.querySelectorAll('.card').forEach(card => {
+                    if (mode === 'char') {
+                        card.classList.add('hide-pinyin');
+                    } else {
+                        card.classList.remove('hide-pinyin');
+                    }
+                });
+            };
+        });
+
+        // 初始化
+        initGame();
+    </script>
+</body>
+</html>
