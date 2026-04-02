@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼音专项练习 🅱️🅿️🅳️🆚❓ - b p d q · ie · un</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 15px;
+            color: white;
+        }
+        h1 {
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            color: #e94560;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        .game-container {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            max-width: 400px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .stats span {
+            background: rgba(255,255,255,0.15);
+            padding: 6px 12px;
+            border-radius: 8px;
+        }
+        .focus-areas {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .focus-tag {
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.1);
+        }
+        .focus-tag.active {
+            background: #e94560;
+            transform: scale(1.1);
+        }
+        .focus-tag:hover {
+            background: rgba(233,69,96,0.5);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-bottom: 10px;
+        }
+        .card {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            user-select: none;
+        }
+        .card:hover { transform: scale(1.05); }
+        .card.selected { background: #ffd93d; transform: scale(1.1); }
+        .card.matched { animation: match 0.5s ease-out forwards; }
+        @keyframes match {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        .card .char { font-size: 26px; font-weight: bold; color: #333; }
+        .card .pinyin { font-size: 10px; color: #666; }
+        .card .hint {
+            position: absolute;
+            bottom: 2px;
+            font-size: 8px;
+            color: #e94560;
+        }
+        .card.has-hint { position: relative; }
+        .btn { width: 100%; padding: 10px; border: none; border-radius: 10px; cursor: pointer; font-size: 14px; transition: all 0.3s; }
+        .btn-restart { background: #4ecdc4; color: white; margin-bottom: 8px; }
+        .btn-restart:hover { background: #3dbdb5; }
+        .btn-tip {
+            background: #e94560;
+            color: white;
+        }
+        .btn-tip:hover { background: #d63c54; }
+        .message { text-align: center; margin-top: 8px; min-height: 20px; font-size: 13px; }
+        .success { color: #4ecdc4; font-weight: bold; }
+        .error { color: #ff6b6b; }
+        .tip-box {
+            background: rgba(233,69,96,0.2);
+            border: 1px solid #e94560;
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        .tip-box h4 { color: #e94560; margin-bottom: 5px; }
+        .tip-box p { margin: 3px 0; color: rgba(255,255,255,0.9); }
+        .legend {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+        }
+        .legend span { display: flex; align-items: center; gap: 4px; }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .dot.b { background: #4ecdc4; }
+        .dot.p { background: #e94560; }
+        .dot.d { background: #ffd93d; }
+        .dot.q { background: #9b59b6; }
+        .dot.ie { background: #3498db; }
+        .dot.un { background: #f39c12; }
+    </style>
+</head>
+<body>
+    <h1>🅱️🅿️🅳️🆚❓ 拼音专项练习</h1>
+    <p class="subtitle">重点练：b p d q 区分 · ie un 韵母</p>
+    
+    <div class="game-container">
+        <div class="stats">
+            <span>得分: <b id="score">0</b></span>
+            <span>剩余: <b id="left">0</b></span>
+        </div>
+        
+        <div class="focus-areas">
+            <span class="focus-tag active" data-type="all" onclick="setFocus('all')">🎯 全部</span>
+            <span class="focus-tag" data-type="bp" onclick="setFocus('bp')">b/p</span>
+            <span class="focus-tag" data-type="dq" onclick="setFocus('dq')">d/q</span>
+            <span class="focus-tag" data-type="ie" onclick="setFocus('ie')">ie韵</span>
+            <span class="focus-tag" data-type="un" onclick="setFocus('un')">un韵</span>
+        </div>
+        
+        <div class="grid" id="grid"></div>
+        
+        <button class="btn btn-restart" onclick="initGame()">🔄 重新开始</button>
+        <button class="btn btn-tip" onclick="showTip()">💡 提示（随机揭示1对）</button>
+        <p class="message" id="message"></p>
+    </div>
+    
+    <div class="tip-box" id="tip-box" style="display:none;">
+        <h4>📚 发音小贴士</h4>
+        <p><b>b/p:</b> b不送气，p送气（像吹蜡烛）</p>
+        <p><b>d/q:</b> d舌尖抵上颚，q像"七"要翘舌</p>
+        <p><b>ie:</b> 类似英语"yes"开头，发"/ie/"</p>
+        <p><b>un:</b> 发"/un/"，嘴唇圆着发"温"</p>
+    </div>
+    
+    <div class="legend">
+        <span><span class="dot b"></span> b</span>
+        <span><span class="dot p"></span> p</span>
+        <span><span class="dot d"></span> d</span>
+        <span><span class="dot q"></span> q</span>
+        <span><span class="dot ie"></span> ie韵</span>
+        <span><span class="dot un"></span> un韵</span>
+    </div>
+
+    <script>
+        // 专项练习字库 - 按声母/韵母分组
+        const charData = {
+            // b 声母
+            b: [
+                {char: '吧', pinyin: 'bā', tip: 'bā'},
+                {char: '八', pinyin: 'bā', tip: 'bā'},
+                {char: '杯', pinyin: 'bēi', tip: 'bēi'},
+                {char: '北', pinyin: 'běi', tip: 'běi'},
+                {char: '报', pinyin: 'bào', tip: 'bào'},
+                {char: '白', pinyin: 'bái', tip: 'bái'},
+                {char: '不', pinyin: 'bù', tip: 'bù'},
+            ],
+            // p 声母
+            p: [
+                {char: '怕', pinyin: 'pà', tip: 'pà'},
+                {char: '爬', pinyin: 'pá', tip: 'pá'},
+                {char: '批', pinyin: 'pī', tip: 'pī'},
+                {char: '皮', pinyin: 'pí', tip: 'pí'},
+                {char: '跑', pinyin: 'pǎo', tip: 'pǎo'},
+                {char: '片', pinyin: 'piàn', tip: 'piàn'},
+                {char: '破', pinyin: 'pò', tip: 'pò'},
+            ],
+            // d 声母
+            d: [
+                {char: '大', pinyin: 'dà', tip: 'dà'},
+                {char: '打', pinyin: 'dǎ', tip: 'dǎ'},
+                {char: '到', pinyin: 'dào', tip: 'dào'},
+                {char: '地', pinyin: 'de/dì', tip: 'dì'},
+                {char: '点', pinyin: 'diǎn', tip: 'diǎn'},
+                {char: '对', pinyin: 'duì', tip: 'duì'},
+                {char: '短', pinyin: 'duǎn', tip: 'duǎn'},
+            ],
+            // q 声母
+            q: [
+                {char: '七', pinyin: 'qī', tip: 'qī'},
+                {char: '齐', pinyin: 'qí', tip: 'qí'},
+                {char: '去', pinyin: 'qù', tip: 'qù'},
+                {char: '起', pinyin: 'qǐ', tip: 'qǐ'},
+                {char: '气', pinyin: 'qì', tip: 'qì'},
+                {char: '却', pinyin: 'què', tip: 'què'},
+                {char: '群', pinyin: 'qún', tip: 'qún'},
+            ],
+            // ie 韵母
+            ie: [
+                {char: '写', pinyin: 'xiě', tip: 'ie'},
+                {char: '谢', pinyin: 'xiè', tip: 'ie'},
+                {char: '接', pinyin: 'jiē', tip: 'ie'},
+                {char: '街', pinyin: 'jiē', tip: 'ie'},
+                {char: '叶', pinyin: 'yè', tip: 'ie'},
+                {char: '爹', pinyin: 'diē', tip: 'ie'},
+                {char: '捏', pinyin: 'niē', tip: 'ie'},
+            ],
+            // un 韵母
+            un: [
+                {char: '春', pinyin: 'chūn', tip: 'un'},
+                {char: '顺', pinyin: 'shùn', tip: 'un'},
+                {char: '问', pinyin: 'wèn', tip: 'un'},
+                {char: '论', pinyin: 'lùn', tip: 'un'},
+                {char: '军', pinyin: 'jūn', tip: 'un'},
+                {char: '温', pinyin: 'wēn', tip: 'un'},
+                {char: '存', pinyin: 'cún', tip: 'un'},
+            ]
+        };
+
+        let grid = [];
+        let selected = [];
+        let score = 0;
+        let currentFocus = 'all';
+        let isProcessing = false;
+        let pairCount = 12; // 12对 = 24张 + 2张占位
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function getData() {
+            let pool = [];
+            
+            if (currentFocus === 'all') {
+                // 全部混合
+                const all = [
+                    ...charData.b.slice(0, 3),
+                    ...charData.p.slice(0, 3),
+                    ...charData.d.slice(0, 3),
+                    ...charData.q.slice(0, 3),
+                    ...charData.ie.slice(0, 2),
+                    ...charData.un.slice(0, 2),
+                ];
+                for (let i = 0; i < 8; i++) {
+                    const item = {...all[i % all.length], id: i * 2};
+                    pool.push(item);
+                    pool.push({...item, id: i * 2 + 1});
+                }
+                // 再加4张凑够24
+                const extra = [...charData.ie[2], ...charData.un[2], ...charData.ie[3], ...charData.un[3]];
+                extra.forEach((item, i) => {
+                    pool.push({...item, id: 16 + i * 2});
+                    pool.push({...item, id: 17 + i * 2});
+                });
+            } else if (currentFocus === 'bp') {
+                const items = [...charData.b.slice(0, 4), ...charData.p.slice(0, 4)];
+                for (let i = 0; i < 8; i++) {
+                    const item = {...items[i], id: i * 2};
+                    pool.push(item);
+                    pool.push({...item, id: i * 2 + 1});
+                }
+            } else if (currentFocus === 'dq') {
+                const items = [...charData.d.slice(0, 4), ...charData.q.slice(0, 4)];
+                for (let i = 0; i < 8; i++) {
+                    const item = {...items[i], id: i * 2};
+                    pool.push(item);
+                    pool.push({...item, id: i * 2 + 1});
+                }
+            } else if (currentFocus === 'ie') {
+                const items = charData.ie.slice(0, 6);
+                for (let i = 0; i < 6; i++) {
+                    const item = {...items[i], id: i * 2};
+                    pool.push(item);
+                    pool.push({...item, id: i * 2 + 1});
+                }
+            } else if (currentFocus === 'un') {
+                const items = charData.un.slice(0, 6);
+                for (let i = 0; i < 6; i++) {
+                    const item = {...items[i], id: i * 2};
+                    pool.push(item);
+                    pool.push({...item, id: i * 2 + 1});
+                }
+            }
+            
+            return shuffle(pool);
+        }
+
+        function initGame() {
+            grid = getData();
+            selected = [];
+            score = 0;
+            isProcessing = false;
+            renderGrid();
+            updateStats();
+            document.getElementById('message').textContent = '';
+            document.getElementById('tip-box').style.display = 'none';
+        }
+
+        function setFocus(type) {
+            currentFocus = type;
+            document.querySelectorAll('.focus-tag').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-type="${type}"]`).classList.add('active');
+            initGame();
+        }
+
+        function renderGrid() {
+            const gridEl = document.getElementById('grid');
+            gridEl.innerHTML = '';
+            gridEl.style.gridTemplateColumns = 'repeat(5, 1fr)';
+            
+            grid.forEach((item, idx) => {
+                if (!item) {
+                    const empty = document.createElement('div');
+                    empty.style.visibility = 'hidden';
+                    gridEl.appendChild(empty);
+                    return;
+                }
+                
+                const card = document.createElement('div');
+                const colorClass = getColorClass(item.tip);
+                card.className = `card ${colorClass}`;
+                
+                let hint = '';
+                if (currentFocus === 'bp' || currentFocus === 'all') {
+                    hint = `<span class="hint">${item.tip}</span>`;
+                }
+                
+                card.innerHTML = `
+                    <span class="char">${item.char}</span>
+                    <span class="pinyin">${item.pinyin}</span>
+                    ${hint}
+                `;
+                card.dataset.idx = idx;
+                card.onclick = () => selectCard(idx);
+                gridEl.appendChild(card);
+            });
+        }
+
+        function getColorClass(tip) {
+            if (tip === 'bā' || tip === 'bēi' || tip === 'běi' || tip === 'bào' || tip === 'bái' || tip === 'bù') return 'has-hint';
+            if (tip === 'pà' || tip === 'pá' || tip === 'pī' || tip === 'pí' || tip === 'pǎo' || tip === 'piàn' || tip === 'pò') return 'has-hint';
+            if (tip === 'dà' || tip === 'dǎ' || tip === 'dào' || tip === 'dì' || tip === 'diǎn' || tip === 'duì' || tip === 'duǎn') return 'has-hint';
+            if (tip === 'qī' || tip === 'qí' || tip === 'qù' || tip === 'qǐ' || tip === 'qì' || tip === 'què' || tip === 'qún') return 'has-hint';
+            if (tip === 'ie') return 'has-hint';
+            if (tip === 'un') return 'has-hint';
+            return '';
+        }
+
+        function selectCard(idx) {
+            if (isProcessing) return;
+            if (selected.includes(idx)) return;
+            if (!grid[idx]) return;
+            
+            const cards = document.querySelectorAll('.card');
+            cards[idx].classList.add('selected');
+            selected.push(idx);
+
+            if (selected.length === 2) {
+                isProcessing = true;
+                checkMatch();
+            }
+        }
+
+        function checkMatch() {
+            const [i1, i2] = selected;
+            const item1 = grid[i1];
+            const item2 = grid[i2];
+            
+            // 匹配条件：拼音完全相同（包括声调）
+            const match = item1.pinyin === item2.pinyin;
+
+            if (match) {
+                const cards = document.querySelectorAll('.card');
+                cards[i1].classList.add('matched');
+                cards[i2].classList.add('matched');
+                
+                setTimeout(() => {
+                    grid[i1] = null;
+                    grid[i2] = null;
+                    cards[i1].style.visibility = 'hidden';
+                    cards[i2].style.visibility = 'hidden';
+                    
+                    score += 10;
+                    selected = [];
+                    isProcessing = false;
+                    updateStats();
+                    checkWin();
+                }, 500);
+                
+                showMessage('🎉 正确！+10分', 'success');
+            } else {
+                setTimeout(() => {
+                    const cards = document.querySelectorAll('.card');
+                    cards[i1].classList.remove('selected');
+                    cards[i2].classList.remove('selected');
+                    selected = [];
+                    isProcessing = false;
+                    
+                    // 显示正确答案提示
+                    showMessage(`😅 不对！${item1.char}(${item1.pinyin}) ≠ ${item2.char}(${item2.pinyin})`, 'error');
+                }, 600);
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            const left = grid.filter(g => g !== null).length;
+            document.getElementById('left').textContent = left;
+        }
+
+        function checkWin() {
+            const left = grid.filter(g => g !== null).length;
+            if (left === 0) {
+                showMessage('🏆 恭喜通关！太厉害了！', 'success');
+                document.getElementById('tip-box').style.display = 'block';
+            }
+        }
+
+        function showMessage(text, className = '') {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = 'message ' + className;
+        }
+
+        function showTip() {
+            // 找一对未消除的
+            const remaining = grid.map((g, i) => g ? i : -1).filter(i => i >= 0);
+            if (remaining.length < 2) return;
+            
+            // 随机选一个，然后找它的配对
+            const idx = remaining[Math.floor(Math.random() * remaining.length)];
+            const target = grid[idx];
+            
+            // 找配对位置
+            for (let i = idx + 1; i < grid.length; i++) {
+                if (grid[i] && grid[i].pinyin === target.pinyin) {
+                    const cards = document.querySelectorAll('.card');
+                    cards[idx].classList.add('selected');
+                    cards[i].classList.add('selected');
+                    selected = [idx, i];
+                    showMessage(`💡 提示：找和 ${target.char}(${target.pinyin}) 相同的！`, 'success');
+                    
+                    setTimeout(() => {
+                        cards[idx].classList.remove('selected');
+                        cards[i].classList.remove('selected');
+                        selected = [];
+                    }, 1500);
+                    return;
+                }
+            }
+        }
+
+        // 初始化
+        initGame();
+    </script>
+</body>
+</html>
